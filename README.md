@@ -1,5 +1,10 @@
-# ece661_vlm_project
+# Image Captioning with CLIP and DistilGPT2
 
+This project implements an image captioning system using CLIP for image encoding and DistilGPT2 for generating captions. It includes various prompt engineering techniques to improve caption quality.
+
+## Project Structure
+
+```
 image_captioning_project/
 │
 ├── data/
@@ -54,5 +59,53 @@ image_captioning_project/
 │
 ├── requirements.txt             # Project dependencies
 ├── setup.py                     # Package installation
-├── README.md                    # Project documentation
 └── .gitignore                   # Git ignore file
+```
+
+## Installation
+
+```bash
+git clone https://github.com/yourusername/image-captioning-project.git
+cd image-captioning-project
+pip install -r requirements.txt
+```
+
+## Usage
+
+### Training
+
+```bash
+python scripts/train.py --config configs/base_config.yaml
+```
+
+### Evaluation
+
+```bash
+python scripts/evaluate.py --model-path checkpoints/model.pt --data-dir data/coco
+```
+
+### Generating Captions
+
+```bash
+python scripts/generate_captions.py --image-path path/to/image.jpg --model-path checkpoints/model.pt
+```
+
+## Prompt Engineering Approaches
+
+This project implements three different prompt engineering techniques:
+
+1. **Learnable Prompts**: Trainable embedding vectors that are prepended to the input sequence
+2. **Cross-Attention**: A mechanism that allows the text generator to attend to image features
+3. **Prefix Tuning**: Layer-specific prompt vectors that guide the generation process
+
+## Results
+
+| Model Variant | BLEU-4 | CIDEr | SPICE |
+|---------------|--------|-------|-------|
+| Baseline      | 0.XX   | 0.XX  | 0.XX  |
+| Learnable Prompts | 0.XX | 0.XX | 0.XX |
+| Cross-Attention | 0.XX | 0.XX | 0.XX |
+
+## License
+
+[MIT](LICENSE)
