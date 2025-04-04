@@ -1,24 +1,21 @@
-# Image Captioning with CLIP and DistilGPT2
+# Neural Network Distillation
 
-This project implements an image captioning system using CLIP for image encoding and DistilGPT2 for generating captions. It includes various prompt engineering techniques to improve caption quality.
+In this project, we will investigate another way to build light weight deep networks commonly known as distillation.
 
 ## Project Structure
 
 ```
-image_captioning_project/
+project/
 │
 ├── data/
 │   ├── __init__.py
-│   ├── coco_dataset.py          # COCO dataset loading and preprocessing
+│   ├── dataset.py               # Dataset loading and preprocessing
 │   ├── data_utils.py            # Data handling utilities
 │   └── augmentations.py         # Image augmentation functions
 │
 ├── models/
 │   ├── __init__.py
-│   ├── clip_encoder.py          # CLIP image encoder component
-│   ├── gpt2_decoder.py          # DistilGPT2 text generation component
-│   ├── caption_model.py         # Combined model architecture
-│   └── prompt_engineering.py    # Learnable prompt implementations
+│   └── ResNet50.py         # Image augmentation functions
 │
 ├── training/
 │   ├── __init__.py
@@ -34,8 +31,7 @@ image_captioning_project/
 │
 ├── inference/
 │   ├── __init__.py
-│   ├── caption_generator.py     # Inference pipeline
-│   └── beam_search.py           # Advanced decoding strategies
+│   └── infer.py           # Probably don't need this
 │
 ├── utils/
 │   ├── __init__.py
@@ -49,8 +45,7 @@ image_captioning_project/
 │
 ├── scripts/
 │   ├── train.py                 # Training script
-│   ├── evaluate.py              # Evaluation script
-│   └── generate_captions.py     # Demo script for inference
+│   └── evaluate.py              # Evaluation script
 │
 ├── configs/
 │   ├── base_config.yaml         # Base configuration
@@ -65,7 +60,7 @@ image_captioning_project/
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/image-captioning-project.git
+git clone https://github.com/Dodogama/project-compresion.git
 cd image-captioning-project
 pip install -r requirements.txt
 ```
@@ -92,19 +87,11 @@ python scripts/generate_captions.py --image-path path/to/image.jpg --model-path 
 
 ## Prompt Engineering Approaches
 
-This project implements three different prompt engineering techniques:
+This project implements neural network distillation:
 
 1. **Learnable Prompts**: Trainable embedding vectors that are prepended to the input sequence
-2. **Cross-Attention**: A mechanism that allows the text generator to attend to image features
-3. **Prefix Tuning**: Layer-specific prompt vectors that guide the generation process
 
 ## Results
-
-| Model Variant | BLEU-4 | CIDEr | SPICE |
-|---------------|--------|-------|-------|
-| Baseline      | 0.XX   | 0.XX  | 0.XX  |
-| Learnable Prompts | 0.XX | 0.XX | 0.XX |
-| Cross-Attention | 0.XX | 0.XX | 0.XX |
 
 ## License
 
