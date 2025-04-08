@@ -2,7 +2,6 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 
-
 class DistillationLoss(nn.Module):
     def __init__(self, T=1.0, alpha=0.5):
         super(DistillationLoss, self).__init__()
