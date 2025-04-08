@@ -4,6 +4,7 @@ from typing import Callable, Optional
 from .conv import conv1x1, conv3x3
 
 class BasicBlock(nn.Module):
+    """Pair of convolutional layers forming basic residual block."""
     expansion: int = 1
 
     def __init__(
@@ -14,7 +15,6 @@ class BasicBlock(nn.Module):
         downsample: Optional[nn.Module] = None,
         groups: int = 1,
         base_width: int = 64,
-        dilation: int = 1,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super(BasicBlock, self).__init__()
@@ -22,9 +22,6 @@ class BasicBlock(nn.Module):
             norm_layer = nn.BatchNorm2d
         if groups != 1 or base_width != 64:
             raise ValueError('BasicBlock only supports groups=1 and base_width=64')
-        if dilation > 1:
-            raise NotImplementedError("Dilation > 1 not supported in BasicBlock")
-        # Both self.conv1 and self.downsample layers downsample the input when stride != 1
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = norm_layer(planes)
         self.relu = nn.ReLU(inplace=True)
@@ -34,25 +31,27 @@ class BasicBlock(nn.Module):
         self.stride = stride
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # skip connection
         identity = x
-
+        # conv layer 1
         out = self.conv1(x)
         out = self.bn1(out)
         out = self.relu(out)
-
+        # conv layer 2
         out = self.conv2(out)
         out = self.bn2(out)
-
+        # downsample
         if self.downsample is not None:
             identity = self.downsample(x)
-
+        # skip connection
         out += identity
+        # output
         out = self.relu(out)
-
         return out
     
 
 class Bottleneck(nn.Module):
+    """Stack of convolutional layers forming bottleneck residual block."""
     expansion: int = 4
 
     def __init__(
@@ -63,17 +62,17 @@ class Bottleneck(nn.Module):
         downsample: Optional[nn.Module] = None,
         groups: int = 1,
         base_width: int = 64,
-        dilation: int = 1,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super(Bottleneck, self).__init__()
-        if norm_layer is None:
+        if norm_layer is None and groups > 1:
+            norm_layer = nn.GroupNorm
+        elif norm_layer is None:
             norm_layer = nn.BatchNorm2d
         width = int(planes * (base_width / 64.)) * groups
-        # Both self.conv2 and self.downsample layers downsample the input when stride != 1
         self.conv1 = conv1x1(inplanes, width)
         self.bn1 = norm_layer(width)
-        self.conv2 = conv3x3(width, width, stride, groups, dilation)
+        self.conv2 = conv3x3(width, width, stride, groups)
         self.bn2 = norm_layer(width)
         self.conv3 = conv1x1(width, planes * self.expansion)
         self.bn3 = norm_layer(planes * self.expansion)
@@ -82,23 +81,24 @@ class Bottleneck(nn.Module):
         self.stride = stride
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # skip connection
         identity = x
-
+        # conv layer 1
         out = self.conv1(x)
         out = self.bn1(out)
         out = self.relu(out)
-
+        # conv layer 2
         out = self.conv2(out)
         out = self.bn2(out)
         out = self.relu(out)
-
+        # conv layer 3
         out = self.conv3(out)
         out = self.bn3(out)
-
+        # downsample
         if self.downsample is not None:
             identity = self.downsample(x)
-
+        # skip connection
         out += identity
+        # output
         out = self.relu(out)
-
         return out
