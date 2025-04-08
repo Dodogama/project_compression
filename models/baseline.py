@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 class BasicMLP(nn.Module):
@@ -20,3 +21,24 @@ class BasicMLP(nn.Module):
         x = self.do2(x)
         x = self.fc3(x)
         return x
+
+def _mlp(input_size: int, hidden_size: int, output_size: int, **kwargs) -> BasicMLP:
+    """Constructs a BasicMLP model."""
+    model = BasicMLP(input_size=input_size, hidden_size=hidden_size, output_size=output_size)
+    # load pretrained weights if available in kwargs
+    return model
+
+def mnist1200(**kwargs) -> BasicMLP:
+    """Wrapper function for constructing MNIST teacher model."""
+    return _mlp(28*28, 1200, 10)
+
+
+def mnist400(**kwargs) -> BasicMLP:
+    """Wrapper function for constructing MNIST student model."""
+    return _mlp(28*28, 400, 10)
+
+if __name__ == '__main__':
+    model = mnist1200() 
+    sample = torch.randn(1, 1, 28, 28)
+    output = model(sample)
+    print(output.shape) 
