@@ -25,17 +25,19 @@ class BasicMLP(nn.Module):
 def _mlp(input_size: int, hidden_size: int, output_size: int, **kwargs) -> BasicMLP:
     """Constructs a BasicMLP model."""
     model = BasicMLP(input_size=input_size, hidden_size=hidden_size, output_size=output_size)
-    # load pretrained weights if available in kwargs
+    pretrained = kwargs.get('pretrained', None)
+    if pretrained:
+        model.load_state_dict(torch.load(pretrained))
     return model
 
 def mnist1200(**kwargs) -> BasicMLP:
     """Wrapper function for constructing MNIST teacher model."""
-    return _mlp(28*28, 1200, 10)
+    return _mlp(28*28, 1200, 10, **kwargs)
 
 
 def mnist400(**kwargs) -> BasicMLP:
     """Wrapper function for constructing MNIST student model."""
-    return _mlp(28*28, 400, 10)
+    return _mlp(28*28, 400, 10, **kwargs)
 
 if __name__ == '__main__':
     model = mnist1200() 
