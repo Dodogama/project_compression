@@ -46,7 +46,7 @@ def get_cifar10_pipeline(batch_size: int=32, val_split: float=0.2):
 
 
 if __name__ == '__main__':
-    train_loader, val_loader, test_loader = get_cifar10_pipeline(batch_size=64, num_workers=4)
+    train_loader, val_loader, test_loader = get_cifar10_pipeline(batch_size=64)
     for i, data in enumerate(train_loader, 0):
         inputs, labels = data
         if i == 0:
