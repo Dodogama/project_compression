@@ -12,12 +12,15 @@ class BasicMLP(nn.Module):
         self.relu2 = nn.ReLU()
         self.do2 = nn.Dropout(0.25)
         self.fc3 = nn.Linear(hidden_size, output_size)
+        self._activation_hooks = {}
     
     def forward(self, x):
         x = x.view(-1, self.input_size)
         x = self.relu1(self.fc1(x))
+        self._activation_hooks['fc1'] = x.detach().cpu().numpy()
         x = self.do1(x)
         x = self.relu2(self.fc2(x))
+        self._activation_hooks['fc2'] = x.detach().cpu().numpy()
         x = self.do2(x)
         x = self.fc3(x)
         return x
