@@ -1,4 +1,4 @@
-
+import sys
 import tqdm
 import torch
 import torch.nn as nn
@@ -6,24 +6,17 @@ from torch.utils.data import DataLoader
 import numpy as np
 from configs.config import Config
 import itertools
+from .losses import DistillationLoss, Accuracy
 
 
-def grid_search_cv(**kwargs):
-    hparams_grid = {
-        'learning_rate': [1e-3, 1e-4],
-        'batch_size': 32,
-        'optimizer': ['Adam', 'RMSprop'],
-        'num_epochs': 5
-    }
-
+def grid_search_cv(hparams_grid):
     param_names = list(hparams_grid.keys())
     param_values = list(hparams_grid.values())
     all_combinations = list(itertools.product(*param_values))
 
     for combo in all_combinations:
         current_hparams = dict(zip(param_names, combo))
-        metrics = train_val{**current_hparams, **kwargs}
-    return
+        print(current_hparams)
 
 
 def train_model(train_loader: DataLoader, model: nn.Module, criterion: nn.Module, optimizer: nn.Module,
@@ -85,14 +78,13 @@ def evaluate_model(val_loader: DataLoader, model: nn.Module, criterion: nn.Modul
 
 
 def train_val(train_loader, val_loader, model, criterion, optimizer, scheduler, device, aux_metrics, path):
-    torch.manual_seed(42)
     metrics = {"train_loss": [], "val_loss": []}
     for k in aux_metrics.keys():
         metrics[k] = []
     try:
-        best_val_loss = torch.load(path)['val_loss']
+        best_val_acc = torch.load(path)['accuracy']
     except Exception:
-        best_val_loss = float('inf')
+        best_val_acc = 0
     patience = 10
     counter = 0
     epochs = 200
@@ -105,15 +97,15 @@ def train_val(train_loader, val_loader, model, criterion, optimizer, scheduler, 
         for k, v in aux_metrics.items():
             stat = evaluate_model(val_loader, model, v, device)
             metrics[k].append(np.mean(stat))
-        if metrics['val_loss'][-1] < best_val_loss:
-            best_val_loss = metrics['val_loss'][-1]
+        if metrics['accuracy'][-1] >= best_val_acc:
+            best_val_acc = metrics['accuracy'][-1]
             counter = 0
-            print(f"Epoch {epoch+1}: New best val loss: {best_val_loss:.4f}, Accuracy: {metrics['accuracy'][-1]:.2f} saving model...")
+            print(f"Epoch {epoch+1}: New best accuracy: {metrics['accuracy'][-1]:.4f} saving model...")
             state = {
                 'epoch': epoch,
                 'state_dict': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
-                'val_loss': best_val_loss,
+                'val_loss': metrics['val_loss'][-1],
                 'accuracy': metrics['accuracy'][-1]
             }
             torch.save(state, path)
@@ -203,35 +195,35 @@ def distill_model(train_loader: DataLoader, student: nn.Module, teacher: nn.Modu
 
 
 def distill(train_loader, val_loader, student, teacher, loss, criterion, optimizer, scheduler, device, aux_metrics, path):
-    torch.manual_seed(42)
     metrics = {"train_loss": [], "val_loss": []}
     for k in aux_metrics.keys():
         metrics[k] = []
     try:
-        best_val_loss = torch.load(path)['val_loss']
+        best_val_acc = torch.load(path)['accuracy']
     except Exception:
-        best_val_loss = float('inf')
+        best_val_acc = 0
     patience = 10
     counter = 0
     epochs = 200
 
+    distill_loss = DistillationLoss(T=T)
     for epoch in range(epochs):
-        train_loss = distill_model(train_loader, student, teacher, loss, optimizer, scheduler, device)
+        train_loss = distill_model(train_loader, student, teacher, distill_loss, optimizer, scheduler, device)
         val_loss = evaluate_model(val_loader, student, criterion, device)
         metrics['train_loss'].append(np.mean(train_loss))
         metrics['val_loss'].append(np.mean(val_loss))
         for k, v in aux_metrics.items():
             stat = evaluate_model(val_loader, student, v, device)
             metrics[k].append(np.mean(stat))
-        if metrics['val_loss'][-1] < best_val_loss:
-            best_val_loss = metrics['val_loss'][-1]
+        if metrics['accuracy'][-1] >= best_val_acc:
+            best_val_acc = metrics['accuracy'][-1]
             counter = 0
-            print(f"Epoch {epoch+1}: New best val loss: {best_val_loss:.4f}, Accuracy: {metrics['accuracy'][-1]:.2f} saving model...")
+            print(f"Epoch {epoch+1}: New best accuracy: {metrics['accuracy'][-1]:.4f} saving model...")
             state = {
                 'epoch': epoch,
                 'state_dict': student.state_dict(),
                 'optimizer': optimizer.state_dict(),
-                'val_loss': best_val_loss,
+                'val_loss': metrics['val_loss'][-1],
                 'accuracy': metrics['accuracy'][-1]
             }
             torch.save(state, path)
@@ -241,3 +233,13 @@ def distill(train_loader, val_loader, student, teacher, loss, criterion, optimiz
             print(f"Epoch {epoch+1}: Early stop triggered.")
             break
     return metrics
+
+
+if __name__ == '__main__':
+    hparams_grid = {
+        'learning_rate': [1e-3, 1e-4],
+        'batch_size': [32],
+        'optimizer': ['Adam', 'RMSprop'],
+        'num_epochs': [5]
+    }
+    grid_search_cv(hparams_grid)
