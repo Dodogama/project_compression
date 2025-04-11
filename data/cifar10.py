@@ -9,7 +9,7 @@ from torch.utils.data import Subset
 PROJECT_DIR = os.path.dirname(os.getcwd())
 
 
-def get_cifar10_pipeline(batch_size: int=32, val_split: float=0.2):
+def get_cifar10_pipeline(batch_size: int=32, val_split: float=0.2, exclude: set=None):
     """
     Creates PyTorch DataLoaders for the CIFAR-10 dataset with preprocessing.
 
@@ -32,6 +32,12 @@ def get_cifar10_pipeline(batch_size: int=32, val_split: float=0.2):
     # Load the CIFAR-10 training dataset
     train_set = torchvision.datasets.CIFAR10(root=f'{PROJECT_DIR}/data', train=True, download=True, transform=transform)
     test_set = torchvision.datasets.CIFAR10(root=f'{PROJECT_DIR}/data', train=False, download=True, transform=transform)
+    # class exclusion
+    if exclude is not None:
+        train_idx = [i for i in range(len(train_set)) if train_set.targets[i] not in exclude]
+        test_idx = [i for i in range(len(test_set)) if test_set.targets[i] not in exclude]
+        train_set = Subset(train_set, train_idx)
+        test_set = Subset(test_set, test_idx)
     # split train validation
     idx = list(range(len(train_set)))
     idx = np.random.permutation(idx)
