@@ -9,33 +9,29 @@ class DistillationLoss(nn.Module):
         self.T = T
         self.alpha = alpha
 
-    @staticmethod
-    def distillation_loss(student_logits, teacher_logits, labels, T=2.0, alpha=0.5):
-        """
-        Compute the knowledge distillation loss.
-        
-        Args:
-            student_logits: Logits from the student model
-            teacher_logits: Logits from the teacher model
-            labels: True labels
-            T: Temperature for softening probability distributions
-            alpha: Weight for the distillation loss vs. standard cross-entropy loss
-        
-        Returns:
-            Combined loss
-        """
-        # Softmax with temperature for soft targets
-        soft_targets = F.softmax(teacher_logits / T, dim=1)
-        soft_prob = F.log_softmax(student_logits / T, dim=1)
-        # Calculate the distillation loss (soft targets)
-        distillation = F.kl_div(soft_prob, soft_targets, reduction='batchmean') * (T * T)
-        # Calculate the standard cross-entropy loss (hard targets)
-        standard_loss = F.cross_entropy(student_logits, labels)
-        # Return the weighted sum
-        return alpha * distillation + (1 - alpha) * standard_loss
-
     def forward(self, student_logits, teacher_logits, labels):
-        return self.distillation_loss(student_logits, teacher_logits, labels, self.T, self.alpha)
+        return distillation_loss(student_logits, teacher_logits, labels, self.T, self.alpha)
+
+
+def distillation_loss(student_logits, teacher_logits, labels, T=2.0, alpha=0.5):
+    """
+    Compute the knowledge distillation loss.
+    
+    Args:
+        student_logits: Logits from the student model
+        teacher_logits: Logits from the teacher model
+        labels: True labels
+        T: Temperature for softening probability distributions
+        alpha: Weight for the distillation loss vs. standard cross-entropy loss
+    
+    Returns:
+        Combined loss
+    """
+    soft_targets = F.softmax(teacher_logits / T, dim=1)
+    soft_prob = F.log_softmax(student_logits / T, dim=1)
+    distillation = F.kl_div(soft_prob, soft_targets, reduction='batchmean') * (T * T)
+    standard_loss = F.cross_entropy(student_logits, labels)
+    return alpha * distillation + (1 - alpha) * standard_loss
 
 class RMSELoss(nn.Module):
     """Custom RMSE loss."""
