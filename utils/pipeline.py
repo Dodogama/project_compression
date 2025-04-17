@@ -82,9 +82,9 @@ def train_val(train_loader, val_loader, model, criterion, optimizer, scheduler, 
     for k in aux_metrics.keys():
         metrics[k] = []
     try:
-        best_val_acc = torch.load(path)['accuracy']
+        best_val_loss = torch.load(path)['accuracy']
     except Exception:
-        best_val_acc = 0
+        best_val_loss = 0
     patience = 10
     counter = 0
     epochs = 200
@@ -97,8 +97,8 @@ def train_val(train_loader, val_loader, model, criterion, optimizer, scheduler, 
         for k, v in aux_metrics.items():
             stat = evaluate_model(val_loader, model, v, device)
             metrics[k].append(np.mean(stat))
-        if metrics['accuracy'][-1] >= best_val_acc:
-            best_val_acc = metrics['accuracy'][-1]
+        if metrics['accuracy'][-1] >= best_val_loss:
+            best_val_loss = metrics['accuracy'][-1]
             counter = 0
             print(f"Epoch {epoch+1}: New best accuracy: {metrics['accuracy'][-1]:.4f} saving model...")
             state = {
@@ -194,14 +194,14 @@ def distill_model(train_loader: DataLoader, student: nn.Module, teacher: nn.Modu
     return epoch_losses
 
 
-def distill(train_loader, val_loader, student, teacher, loss, criterion, optimizer, scheduler, device, aux_metrics, path):
+def distill(train_loader, val_loader, student, teacher, T, criterion, optimizer, scheduler, device, aux_metrics, path):
     metrics = {"train_loss": [], "val_loss": []}
     for k in aux_metrics.keys():
         metrics[k] = []
     try:
-        best_val_acc = torch.load(path)['accuracy']
+        best_val_loss = torch.load(path)['val_loss']
     except Exception:
-        best_val_acc = 0
+        best_val_loss = float('inf')
     patience = 10
     counter = 0
     epochs = 200
@@ -215,17 +215,16 @@ def distill(train_loader, val_loader, student, teacher, loss, criterion, optimiz
         for k, v in aux_metrics.items():
             stat = evaluate_model(val_loader, student, v, device)
             metrics[k].append(np.mean(stat))
-        if metrics['accuracy'][-1] >= best_val_acc:
-            best_val_acc = metrics['accuracy'][-1]
+        if metrics['val_loss'][-1] < best_val_loss:
+            best_val_loss = metrics['val_loss'][-1]
             counter = 0
-            print(f"Epoch {epoch+1}: New best accuracy: {metrics['accuracy'][-1]:.4f} saving model...")
+            print(f"Epoch {epoch+1}: New best val loss: {metrics['val_loss'][-1]:.4f} saving model...")
             state = {
                 'epoch': epoch,
                 'state_dict': student.state_dict(),
                 'optimizer': optimizer.state_dict(),
-                'val_loss': metrics['val_loss'][-1],
-                'accuracy': metrics['accuracy'][-1]
             }
+            state.update({k: metrics[k][-1] for k in metrics.keys()})
             torch.save(state, path)
         else:
             counter += 1

@@ -102,3 +102,37 @@ class PrecisionRecallF1(nn.Module):
         self.precision_metric.reset()
         self.recall_metric.reset()
         self.f1_metric.reset()
+
+class MIoU(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        self.num_classes = num_classes
+
+    def forward(self, pred_masks, target_masks):
+        """
+        Calculates Mean Intersection over Union (MIoU) over a batch.
+        Args:
+            pred_masks (torch.Tensor): Predicted segmentation masks (N, H, W).
+            target_masks (torch.Tensor): Ground truth segmentation masks (N, H, W).
+        Returns:
+            torch.Tensor: The mean MIoU over the batch (single scalar).
+        """
+        batch_size = pred_masks.size(0)
+        miou_sum = 0.0
+        for i in range(batch_size):
+            iou_per_class = self._calculate_iou(pred_masks[i], target_masks[i])
+            valid_iou_sum = iou_per_class.sum()
+            valid_class_count = (iou_per_class >= 0).sum()
+            if valid_class_count > 0:
+                miou_sum += valid_iou_sum / valid_class_count
+        return miou_sum / batch_size
+
+    def _calculate_iou(self, pred_mask, target_mask):
+        """Calculates Intersection over Union (IoU) for each class."""
+        iou_per_class = torch.zeros(self.num_classes, device=pred_mask.device)
+        for i in range(self.num_classes):
+            intersection = torch.logical_and(pred_mask == i, target_mask == i).sum()
+            union = torch.logical_or(pred_mask == i, target_mask == i).sum()
+            if union > 0:
+                iou_per_class[i] = intersection.float() / union.float()
+        return iou_per_class
