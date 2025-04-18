@@ -1,3 +1,4 @@
+import torch
 import os
 import numpy as np
 import torchvision
@@ -8,8 +9,19 @@ from torch.utils.data import Subset
 
 PROJECT_DIR = os.path.dirname(os.getcwd())
 
+class IndexedDataset(torch.utils.data.Dataset):
+    def __init__(self, dataset):
+        self.dataset = dataset
 
-def get_cifar10_pipeline(batch_size: int=32, val_split: float=0.2, exclude: set=None):
+    def __getitem__(self, index):
+        data, target = self.dataset[index]
+        return data, target, index
+
+    def __len__(self):
+        return len(self.dataset)
+
+
+def get_cifar10_pipeline(batch_size: int=32, val_split: float=0.2, exclude: set=None, indexed: bool=False):
     """
     Creates PyTorch DataLoaders for the CIFAR-10 dataset with preprocessing.
 
@@ -52,6 +64,10 @@ def get_cifar10_pipeline(batch_size: int=32, val_split: float=0.2, exclude: set=
     test_subset = Subset(test_set, train_idx)
     val_subset = Subset(test_set, val_idx)
     # loaders
+    if indexed:
+        train_set = IndexedDataset(train_set)
+        val_subset = IndexedDataset(val_subset)
+        test_subset = IndexedDataset(test_subset)
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=False)

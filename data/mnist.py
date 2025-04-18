@@ -41,7 +41,7 @@ def get_mnist_pipeline(batch_size: int=32, val_split: float=0.2, exclude: set=No
     # split train validation
     idx = list(range(len(test_set)))
     idx = np.random.permutation(idx)
-    split = int(val_split * len(train_set))
+    split = int(val_split * len(test_set))
     train_idx, val_idx = idx[split:], idx[:split]
     test_subset = Subset(test_set, train_idx)
     val_subset = Subset(test_set, val_idx)
