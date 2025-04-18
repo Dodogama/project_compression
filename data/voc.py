@@ -67,7 +67,22 @@ def get_voc_pipeline(batch_size: int=32):
         transforms.Resize((256, 256)),
         transforms.PILToTensor(),
     ])
+    # Load VOC dataset
+    train_set = VOCSegmentation(root=f'{PROJECT_DIR}/data', year='2012', image_set='train', download=True,
+                                 transform=transform, target_transform=target_transform)
+    val_set = VOCSegmentation(root=f'{PROJECT_DIR}/data', year='2012', image_set='val', download=True,
+                               transform=transform, target_transform=target_transform)
+    # loaders
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
+    return train_loader, val_loader, test_loader
+    
+def get_voc_pipeline_test(batch_size: int=32):
     """
+    Can update to return number of classes as well from train_set
+    """
+    # transforms
     joint_transform = SegmentationJointTransform()
     train_set = VOCSegmentationWithTransform(
         root=f'{PROJECT_DIR}/data', year='2012', image_set='train',
@@ -78,12 +93,6 @@ def get_voc_pipeline(batch_size: int=32):
         root=f'{PROJECT_DIR}/data', year='2012', image_set='val',
         transform=joint_transform, download=True
     )
-    """
-    # Load VOC dataset
-    train_set = VOCSegmentation(root=f'{PROJECT_DIR}/data', year='2012', image_set='train', download=True,
-                                 transform=transform, target_transform=target_transform)
-    val_set = VOCSegmentation(root=f'{PROJECT_DIR}/data', year='2012', image_set='val', download=True,
-                               transform=transform, target_transform=target_transform)
     # loaders
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)

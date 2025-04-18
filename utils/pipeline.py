@@ -4,19 +4,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import numpy as np
-from configs.config import Config
-import itertools
-from .losses import DistillationLoss, Accuracy
-
-
-def grid_search_cv(hparams_grid):
-    param_names = list(hparams_grid.keys())
-    param_values = list(hparams_grid.values())
-    all_combinations = list(itertools.product(*param_values))
-
-    for combo in all_combinations:
-        current_hparams = dict(zip(param_names, combo))
-        print(current_hparams)
+from .losses import DistillationLoss
 
 
 def train_model(train_loader: DataLoader, model: nn.Module, criterion: nn.Module, optimizer: nn.Module,
@@ -47,8 +35,8 @@ def train_model(train_loader: DataLoader, model: nn.Module, criterion: nn.Module
         epoch_losses.append(loss.item())
         if scheduler and isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
             scheduler.step(loss.item())
-        elif scheduler:
-            scheduler.step()
+    if scheduler and not isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+        scheduler.step()
     return epoch_losses
 
 
@@ -77,14 +65,13 @@ def evaluate_model(val_loader: DataLoader, model: nn.Module, criterion: nn.Modul
     return epoch_metrics
 
 
-def train_val(train_loader, val_loader, model, criterion, optimizer, scheduler, device, aux_metrics, path):
+def train_val(train_loader, val_loader, model, criterion, optimizer, scheduler, device, aux_metrics, path,
+              patience=10, epochs=200):
     metrics = {"train_loss": [], "val_loss": []}
     for k in aux_metrics.keys():
         metrics[k] = []
-    try:
-        best_val_loss = torch.load(path)['accuracy']
-    except Exception:
-        best_val_loss = 0
+
+    best_val_loss = 0
     patience = 10
     counter = 0
     epochs = 200
@@ -115,43 +102,6 @@ def train_val(train_loader, val_loader, model, criterion, optimizer, scheduler, 
             print(f"Epoch {epoch+1}: Early stop triggered.")
             break
     return metrics
-
-
-def _train_val(cfg: Config):    
-    """
-    Trains and Validates Model using a Config dataclass
-    Args:
-    Return:
-    """
-    try:
-        best_val_loss = torch.load(cfg.path)['val_loss']
-    except Exception:
-        best_val_loss = float('inf')
-    patience = 10
-    counter = 0
-    for epoch in range(cfg.epochs):
-        # dump config + add device
-        train_loss = train_model(**cfg.train_attr)
-        val_loss = evaluate_model(**cfg.val_attr)
-        # pop metrics from config
-        cfg.metrics['train_loss'].append(np.mean(train_loss))
-        cfg.metrics['val_loss'].append(np.mean(val_loss))
-        if cfg.metrics['val_loss'][-1] < best_val_loss:
-            best_val_loss = cfg.metrics['val_loss'][-1]
-            counter = 0
-            print(f"Epoch {epoch+1}: New best val loss: {best_val_loss:.4f}, saving model...")
-            state = {
-                'epoch': epoch,
-                'state_dict': cfg.model.state_dict(),
-                'optimizer': cfg.optimizer.state_dict(),
-                'val_loss': best_val_loss
-            }
-            torch.save(state, cfg.path)
-        else:
-            counter += 1
-        if counter >= patience:
-            print(f"Epoch {epoch+1}: Early stop triggered.")
-            break
 
 
 def distill_model(train_loader: DataLoader, student: nn.Module, teacher: nn.Module, 
@@ -189,8 +139,8 @@ def distill_model(train_loader: DataLoader, student: nn.Module, teacher: nn.Modu
         epoch_losses.append(loss.item())
         if scheduler and isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
             scheduler.step(loss.item())
-        elif scheduler:
-            scheduler.step()
+    if scheduler and not isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+        scheduler.step()
     return epoch_losses
 
 
@@ -198,10 +148,7 @@ def distill(train_loader, val_loader, student, teacher, T, criterion, optimizer,
     metrics = {"train_loss": [], "val_loss": []}
     for k in aux_metrics.keys():
         metrics[k] = []
-    try:
-        best_val_loss = torch.load(path)['val_loss']
-    except Exception:
-        best_val_loss = float('inf')
+    best_val_loss = 0.
     patience = 10
     counter = 0
     epochs = 200
@@ -215,7 +162,7 @@ def distill(train_loader, val_loader, student, teacher, T, criterion, optimizer,
         for k, v in aux_metrics.items():
             stat = evaluate_model(val_loader, student, v, device)
             metrics[k].append(np.mean(stat))
-        if metrics['val_loss'][-1] < best_val_loss:
+        if metrics['val_loss'][-1] >= best_val_loss:
             best_val_loss = metrics['val_loss'][-1]
             counter = 0
             print(f"Epoch {epoch+1}: New best val loss: {metrics['val_loss'][-1]:.4f} saving model...")
@@ -232,13 +179,3 @@ def distill(train_loader, val_loader, student, teacher, T, criterion, optimizer,
             print(f"Epoch {epoch+1}: Early stop triggered.")
             break
     return metrics
-
-
-if __name__ == '__main__':
-    hparams_grid = {
-        'learning_rate': [1e-3, 1e-4],
-        'batch_size': [32],
-        'optimizer': ['Adam', 'RMSprop'],
-        'num_epochs': [5]
-    }
-    grid_search_cv(hparams_grid)
