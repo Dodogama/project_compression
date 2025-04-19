@@ -104,35 +104,79 @@ class PrecisionRecallF1(nn.Module):
         self.f1_metric.reset()
 
 class MIoU(nn.Module):
-    def __init__(self, num_classes):
-        super().__init__()
+    def __init__(self, num_classes=21, ignore_index=255):
+        super(MIoU, self).__init__()
         self.num_classes = num_classes
-
-    def forward(self, pred_masks, target_masks):
+        self.ignore_index = ignore_index
+        self.reset()
+        
+    def reset(self):
+        self.intersection = torch.zeros(self.num_classes)
+        self.union = torch.zeros(self.num_classes)
+        
+    def forward(self, outputs, targets):
         """
-        Calculates Mean Intersection over Union (MIoU) over a batch.
         Args:
-            pred_masks (torch.Tensor): Predicted segmentation masks (N, H, W).
-            target_masks (torch.Tensor): Ground truth segmentation masks (N, H, W).
+            outputs: [B, C, H, W] tensor of raw model outputs (logits)
+            targets: [B, H, W] tensor of ground truth labels
         Returns:
-            torch.Tensor: The mean MIoU over the batch (single scalar).
+            mean IoU score (scalar)
         """
-        batch_size = pred_masks.size(0)
-        miou_sum = 0.0
-        for i in range(batch_size):
-            iou_per_class = self._calculate_iou(pred_masks[i], target_masks[i])
-            valid_iou_sum = iou_per_class.sum()
-            valid_class_count = (iou_per_class >= 0).sum()
-            if valid_class_count > 0:
-                miou_sum += valid_iou_sum / valid_class_count
-        return miou_sum / batch_size
-
-    def _calculate_iou(self, pred_mask, target_mask):
-        """Calculates Intersection over Union (IoU) for each class."""
-        iou_per_class = torch.zeros(self.num_classes, device=pred_mask.device)
-        for i in range(self.num_classes):
-            intersection = torch.logical_and(pred_mask == i, target_mask == i).sum()
-            union = torch.logical_or(pred_mask == i, target_mask == i).sum()
-            if union > 0:
-                iou_per_class[i] = intersection.float() / union.float()
-        return iou_per_class
+        # Convert logits to predictions
+        preds = torch.argmax(outputs, dim=1)  # [B, H, W]
+        
+        batch_size = outputs.size(0)
+        mean_iou = 0.0
+        
+        for b in range(batch_size):
+            current_pred = preds[b]  # [H, W]
+            current_target = targets[b]  # [H, W]
+            
+            # Create mask for valid pixels (not ignore_index)
+            valid_mask = current_target != self.ignore_index
+            
+            # Calculate per-class IoU
+            class_iou_sum = 0.0
+            valid_classes = 0
+            
+            for cls in range(self.num_classes):
+                pred_mask = (current_pred == cls) & valid_mask
+                target_mask = (current_target == cls) & valid_mask
+                
+                intersection = torch.logical_and(pred_mask, target_mask).sum().item()
+                union = torch.logical_or(pred_mask, target_mask).sum().item()
+                
+                # Only count classes that appear in the ground truth
+                if union > 0:
+                    class_iou_sum += intersection / union
+                    valid_classes += 1
+            
+            # Average IoU across valid classes for this image
+            if valid_classes > 0:
+                mean_iou += class_iou_sum / valid_classes
+        
+        # Average across batch
+        return torch.tensor(mean_iou / batch_size) if batch_size > 0 else torch.tensor(0.0)
+    
+    # Added for compatibility with previous evaluation function
+    def compute(self):
+        # For this implementation compute() is not needed since forward() calculates directly
+        # But we keep it for interface compatibility
+        return self.intersection.sum() / self.union.sum() if self.union.sum() > 0 else 0.0
+    
+    # Added for compatibility with previous training loop
+    def update(self, outputs, targets):
+        # Calculate batch IoU and accumulate stats
+        with torch.no_grad():
+            preds = torch.argmax(outputs, dim=1)
+            
+            for cls in range(self.num_classes):
+                valid_mask = targets != self.ignore_index
+                pred_mask = (preds == cls) & valid_mask
+                target_mask = (targets == cls) & valid_mask
+                
+                intersection = torch.logical_and(pred_mask, target_mask).sum().item()
+                union = torch.logical_or(pred_mask, target_mask).sum().item()
+                
+                self.intersection[cls] += intersection
+                self.union[cls] += union
