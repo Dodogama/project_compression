@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import torch
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
@@ -34,8 +35,23 @@ def get_mnist_pipeline(batch_size: int=32, val_split: float=0.2, exclude: set=No
     test_set = torchvision.datasets.MNIST(root=f'{PROJECT_DIR}/data', train=False, download=True, transform=transform_eval)
     # class exclusion
     if exclude is not None:
-        train_idx = [i for i in range(len(train_set)) if train_set.targets[i] not in exclude]
-        test_idx = [i for i in range(len(test_set)) if test_set.targets[i] not in exclude]
+        # Convert train_set.targets to a tensor if it's not already
+        if not isinstance(train_set.targets, torch.Tensor):
+            train_set.targets = torch.tensor(train_set.targets)
+        
+        # Convert test_set.targets to a tensor if it's not already
+        if not isinstance(test_set.targets, torch.Tensor):
+            test_set.targets = torch.tensor(test_set.targets)
+        
+        # Create masks for exclusion
+        train_mask = torch.tensor([target.item() not in exclude for target in train_set.targets])
+        test_mask = torch.tensor([target.item() not in exclude for target in test_set.targets])
+        
+        # Create indices lists
+        train_idx = torch.nonzero(train_mask).squeeze().tolist()
+        test_idx = torch.nonzero(test_mask).squeeze().tolist()
+        
+        # Apply exclusion
         train_set = Subset(train_set, train_idx)
         test_set = Subset(test_set, test_idx)
     # split train validation

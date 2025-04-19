@@ -50,6 +50,9 @@ def get_cifar10_pipeline(batch_size: int=32, val_split: float=0.2, exclude: set=
     # Load the CIFAR-10 training dataset
     train_set = torchvision.datasets.CIFAR10(root=f'{PROJECT_DIR}/data', train=True, download=True, transform=transform_train)
     test_set = torchvision.datasets.CIFAR10(root=f'{PROJECT_DIR}/data', train=False, download=True, transform=transform_eval)
+    # indexing
+    if indexed:
+        train_set = IndexedDataset(train_set)
     # class exclusion
     if exclude is not None:
         train_idx = [i for i in range(len(train_set)) if train_set.targets[i] not in exclude]
@@ -64,10 +67,6 @@ def get_cifar10_pipeline(batch_size: int=32, val_split: float=0.2, exclude: set=
     test_subset = Subset(test_set, train_idx)
     val_subset = Subset(test_set, val_idx)
     # loaders
-    if indexed:
-        train_set = IndexedDataset(train_set)
-        val_subset = IndexedDataset(val_subset)
-        test_subset = IndexedDataset(test_subset)
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=False)
