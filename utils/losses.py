@@ -9,33 +9,29 @@ class DistillationLoss(nn.Module):
         self.T = T
         self.alpha = alpha
 
-    @staticmethod
-    def distillation_loss(student_logits, teacher_logits, labels, T=2.0, alpha=0.5):
-        """
-        Compute the knowledge distillation loss.
-        
-        Args:
-            student_logits: Logits from the student model
-            teacher_logits: Logits from the teacher model
-            labels: True labels
-            T: Temperature for softening probability distributions
-            alpha: Weight for the distillation loss vs. standard cross-entropy loss
-        
-        Returns:
-            Combined loss
-        """
-        # Softmax with temperature for soft targets
-        soft_targets = F.softmax(teacher_logits / T, dim=1)
-        soft_prob = F.log_softmax(student_logits / T, dim=1)
-        # Calculate the distillation loss (soft targets)
-        distillation = F.kl_div(soft_prob, soft_targets, reduction='batchmean') * (T * T)
-        # Calculate the standard cross-entropy loss (hard targets)
-        standard_loss = F.cross_entropy(student_logits, labels)
-        # Return the weighted sum
-        return alpha * distillation + (1 - alpha) * standard_loss
-
     def forward(self, student_logits, teacher_logits, labels):
-        return self.distillation_loss(student_logits, teacher_logits, labels, self.T, self.alpha)
+        return distillation_loss(student_logits, teacher_logits, labels, self.T, self.alpha)
+
+
+def distillation_loss(student_logits, teacher_logits, labels, T=2.0, alpha=0.5):
+    """
+    Compute the knowledge distillation loss.
+    
+    Args:
+        student_logits: Logits from the student model
+        teacher_logits: Logits from the teacher model
+        labels: True labels
+        T: Temperature for softening probability distributions
+        alpha: Weight for the distillation loss vs. standard cross-entropy loss
+    
+    Returns:
+        Combined loss
+    """
+    soft_targets = F.softmax(teacher_logits / T, dim=1)
+    soft_prob = F.log_softmax(student_logits / T, dim=1)
+    distillation = F.kl_div(soft_prob, soft_targets, reduction='batchmean') * (T * T)
+    standard_loss = F.cross_entropy(student_logits, labels)
+    return alpha * distillation + (1 - alpha) * standard_loss
 
 class RMSELoss(nn.Module):
     """Custom RMSE loss."""
@@ -106,3 +102,81 @@ class PrecisionRecallF1(nn.Module):
         self.precision_metric.reset()
         self.recall_metric.reset()
         self.f1_metric.reset()
+
+class MIoU(nn.Module):
+    def __init__(self, num_classes=21, ignore_index=255):
+        super(MIoU, self).__init__()
+        self.num_classes = num_classes
+        self.ignore_index = ignore_index
+        self.reset()
+        
+    def reset(self):
+        self.intersection = torch.zeros(self.num_classes)
+        self.union = torch.zeros(self.num_classes)
+        
+    def forward(self, outputs, targets):
+        """
+        Args:
+            outputs: [B, C, H, W] tensor of raw model outputs (logits)
+            targets: [B, H, W] tensor of ground truth labels
+        Returns:
+            mean IoU score (scalar)
+        """
+        # Convert logits to predictions
+        preds = torch.argmax(outputs, dim=1)  # [B, H, W]
+        
+        batch_size = outputs.size(0)
+        mean_iou = 0.0
+        
+        for b in range(batch_size):
+            current_pred = preds[b]  # [H, W]
+            current_target = targets[b]  # [H, W]
+            
+            # Create mask for valid pixels (not ignore_index)
+            valid_mask = current_target != self.ignore_index
+            
+            # Calculate per-class IoU
+            class_iou_sum = 0.0
+            valid_classes = 0
+            
+            for cls in range(self.num_classes):
+                pred_mask = (current_pred == cls) & valid_mask
+                target_mask = (current_target == cls) & valid_mask
+                
+                intersection = torch.logical_and(pred_mask, target_mask).sum().item()
+                union = torch.logical_or(pred_mask, target_mask).sum().item()
+                
+                # Only count classes that appear in the ground truth
+                if union > 0:
+                    class_iou_sum += intersection / union
+                    valid_classes += 1
+            
+            # Average IoU across valid classes for this image
+            if valid_classes > 0:
+                mean_iou += class_iou_sum / valid_classes
+        
+        # Average across batch
+        return torch.tensor(mean_iou / batch_size) if batch_size > 0 else torch.tensor(0.0)
+    
+    # Added for compatibility with previous evaluation function
+    def compute(self):
+        # For this implementation compute() is not needed since forward() calculates directly
+        # But we keep it for interface compatibility
+        return self.intersection.sum() / self.union.sum() if self.union.sum() > 0 else 0.0
+    
+    # Added for compatibility with previous training loop
+    def update(self, outputs, targets):
+        # Calculate batch IoU and accumulate stats
+        with torch.no_grad():
+            preds = torch.argmax(outputs, dim=1)
+            
+            for cls in range(self.num_classes):
+                valid_mask = targets != self.ignore_index
+                pred_mask = (preds == cls) & valid_mask
+                target_mask = (targets == cls) & valid_mask
+                
+                intersection = torch.logical_and(pred_mask, target_mask).sum().item()
+                union = torch.logical_or(pred_mask, target_mask).sum().item()
+                
+                self.intersection[cls] += intersection
+                self.union[cls] += union
