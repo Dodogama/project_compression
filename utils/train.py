@@ -131,3 +131,29 @@ def train_val_seg(train_loader, val_loader, model, criterion, optimizer, schedul
             print(f"Epoch {epoch+1}: Early stop triggered.")
             break
     return metrics
+
+
+def evaluate_miou(val_loader: DataLoader, model: nn.Module, criterion: nn.Module, device: str='cpu') -> list:
+    """
+    Evaluate the model on validation data.
+
+    Args:
+        model: The PyTorch model to evaluate.
+        val_loader: DataLoader for the validation data.
+        criterion: Loss function.
+        device: Device to run the evaluation on ('cpu' or 'cuda').
+
+    Returns:
+        list: Collection of metrics.
+    """
+    model.eval()
+    criterion.reset()
+    with torch.no_grad():
+        for inputs, targets in tqdm.tqdm(val_loader, desc='evaluating...', file=sys.stdout):
+            inputs = inputs.to(device)
+            # targets = targets.squeeze(1).long().to(device)
+            targets = targets.to(device)
+            preds = model(inputs)
+            criterion.update(preds, targets)
+    miou = criterion.compute()
+    return miou
