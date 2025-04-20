@@ -40,16 +40,3 @@ def plot_training_metrics(metrics_dict):
 
     plt.tight_layout()  # Adjust spacing between subplots
     plt.show()
-
-
-def plot_sequence_predictions(input_seq, real_output_seq, predicted_output_seq, feature_names):
-    """
-    Plots input, real output, and predicted output sequences for each feature with correctly aligned time steps.
-
-    Args:
-        input_seq (np.array): Input sequence (time steps, features).
-        real_output_seq (np.array): Real output sequence (time steps, features).
-        predicted_output_seq (np.array): Predicted output sequence (time steps, features).
-        feature_names (list): List of feature names.
-    """
-    pass

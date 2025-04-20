@@ -2,6 +2,8 @@
 
 In this project, we will investigate another way to build light weight deep networks commonly known as distillation.
 
+*Note: Unfortunately due to 100mb compression limit model weights could not be uploaded using basic public license.*
+
 ## Project Structure
 
 ```
@@ -27,10 +29,11 @@ project/
 │
 ├── notebooks/
 │   ├── figures.ipynb            # Dataset analysis
-│   ├── simplemlp.ipynb          # MNIST models (Note current version may not be final)
-│   ├── resnet.ipynb             # CIFAR models (Note current version may not be final)
-│   ├── unet.ipynb               # VOC models   (Note current version may not be final)
-│   └── self_distillation.ipynb  # CIFAR models (Note current version may not be final)
+│   ├── simplemlp.ipynb          # MNIST models (Note current version may be experimental)
+│   ├── resnet.ipynb             # CIFAR models (Note current version may be experimental)
+│   ├── unet.ipynb               # VOC models   (Note current version may be experimental)
+│   ├── selfdistillation.ipynb   # CIFAR models (Note current version may be experimental)
+│   └── self_distillation.ipynb  # CIFAR models (Note current version may be experimental)
 │
 ├── requirements.txt             # Project dependencies
 └── .gitignore                   # Git ignore file
