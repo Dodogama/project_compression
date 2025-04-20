@@ -10,20 +10,19 @@ In this project, we will investigate another way to build light weight deep netw
 project/
 │
 ├── data/
-│   ├── __init__.py
 │   ├── cifar10.py               # Dataset loading and preprocessing
 │   ├── mnist.py                 # Dataset loading and preprocessing
 │   └── voc.py                   # Dataset loading and preprocessing
 │
 ├── models/
-│   ├── __init__.py
 │   ├── baseline.py              # MLP
 │   ├── unet.py                  # ResNet backbone UNet
 │   ├── resnet.py                # ResNet
 │   └── resnet_sd.py             # ResNet w/ self distill hook
 │
 ├── utils/
-│   ├── __init__.py
+│   ├── plots.py                 # Visual analytics
+│   ├── summary.py               # Model summary statistics and code
 │   ├── distill.py               # Reusing distillation loops
 │   └── train.py                 # Resuing training/evaluation loops
 │
