@@ -9,51 +9,30 @@ project/
 │
 ├── data/
 │   ├── __init__.py
-│   ├── dataset.py               # Dataset loading and preprocessing
-│   ├── data_utils.py            # Data handling utilities
-│   └── augmentations.py         # Image augmentation functions
+│   ├── cifar10.py               # Dataset loading and preprocessing
+│   ├── mnist.py                 # Dataset loading and preprocessing
+│   └── voc.py                   # Dataset loading and preprocessing
 │
 ├── models/
 │   ├── __init__.py
-│   └── ResNet50.py         # Image augmentation functions
-│
-├── training/
-│   ├── __init__.py
-│   ├── trainer.py               # Training loop and optimization
-│   ├── loss_functions.py        # Custom loss implementations
-│   └── config.py                # Training hyperparameters
-│
-├── evaluation/
-│   ├── __init__.py
-│   ├── metrics.py               # BLEU, CIDEr, SPICE implementations
-│   ├── evaluator.py             # Evaluation pipeline
-│   └── visualizations.py        # Result visualization tools
-│
-├── inference/
-│   ├── __init__.py
-│   └── infer.py           # Probably don't need this
+│   ├── baseline.py              # MLP
+│   ├── unet.py                  # ResNet backbone UNet
+│   ├── resnet.py                # ResNet
+│   └── resnet_sd.py             # ResNet w/ self distill hook
 │
 ├── utils/
 │   ├── __init__.py
-│   ├── logging_utils.py         # Logging functionality
-│   └── checkpoint_utils.py      # Model saving and loading
+│   ├── distill.py               # Reusing distillation loops
+│   └── train.py                 # Resuing training/evaluation loops
 │
 ├── notebooks/
-│   ├── data_exploration.ipynb   # Dataset analysis
-│   ├── model_training.ipynb     # Interactive training notebook
-│   └── results_analysis.ipynb   # Performance analysis
-│
-├── scripts/
-│   ├── train.py                 # Training script
-│   └── evaluate.py              # Evaluation script
-│
-├── configs/
-│   ├── base_config.yaml         # Base configuration
-│   ├── prompt_tuning.yaml       # Prompt tuning configuration
-│   └── cross_attention.yaml     # Cross-attention configuration
+│   ├── figures.ipynb            # Dataset analysis
+│   ├── simplemlp.ipynb          # MNIST models (Note current version may not be final)
+│   ├── resnet.ipynb             # CIFAR models (Note current version may not be final)
+│   ├── unet.ipynb               # VOC models   (Note current version may not be final)
+│   └── self_distillation.ipynb  # CIFAR models (Note current version may not be final)
 │
 ├── requirements.txt             # Project dependencies
-├── setup.py                     # Package installation
 └── .gitignore                   # Git ignore file
 ```
 
@@ -61,35 +40,11 @@ project/
 
 ```bash
 git clone https://github.com/Dodogama/project-compresion.git
-cd image-captioning-project
+cd project-compression
 pip install -r requirements.txt
 ```
 
 ## Usage
-
-### Training
-
-```bash
-python scripts/train.py --config configs/base_config.yaml
-```
-
-### Evaluation
-
-```bash
-python scripts/evaluate.py --model-path checkpoints/model.pt --data-dir data/coco
-```
-
-### Generating Captions
-
-```bash
-python scripts/generate_captions.py --image-path path/to/image.jpg --model-path checkpoints/model.pt
-```
-
-## Prompt Engineering Approaches
-
-This project implements neural network distillation:
-
-1. **Learnable Prompts**: Trainable embedding vectors that are prepended to the input sequence
 
 ## Results
 
