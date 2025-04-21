@@ -31,8 +31,8 @@ project/
 │   ├── simplemlp.ipynb          # MNIST models (Note current version may be experimental)
 │   ├── resnet.ipynb             # CIFAR models (Note current version may be experimental)
 │   ├── unet.ipynb               # VOC models   (Note current version may be experimental)
-│   ├── selfdistillation.ipynb   # CIFAR models (Note current version may be experimental)
-│   └── self_distillation.ipynb  # CIFAR models (Note current version may be experimental)
+│   ├── selfdistill.ipynb        # CIFAR models (Note current version may be experimental) (alternate implementation)
+│   └── self_distillation.ipynb  # CIFAR models (Note current version may be experimental) (primary implementation)
 │
 ├── requirements.txt             # Project dependencies
 └── .gitignore                   # Git ignore file
