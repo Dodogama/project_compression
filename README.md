@@ -1,8 +1,15 @@
 # Neural Network Distillation
 
-In this project, we will investigate another way to build light weight deep networks commonly known as distillation.
+At this time DeepSeek has garnered international attention. Utilization of distillation is a particular point of interest behind the success of the parent and children models. This project is intended as a learning exercise to explore the underlying concept of distillation on simpler examples.
 
-*Note: Unfortunately due to 100mb compression limit model weights could not be uploaded using basic public license.*
+Overview of different use cases of distillation on simple problems.
+
+1. Traditional distillation (larger teacher to smaller student)
+2. Reverse distillation (smaller teacher to larger student)
+3. Self distillation (using embedded shallow classifiers)
+4. Self distillation (using previous epoch logits)
+5. Transferring feature representations
+6. Distillation regularization effect on vision segmentation
 
 ## Project Structure
 
@@ -46,9 +53,15 @@ cd project-compression
 pip install -r requirements.txt
 ```
 
-## Usage
-
 ## Results
+
+![Alt text](figs/mnist/accuracy.png "MLP multiclass classification results")
+
+![Alt text](figs/cifar/accuracy.png "ResNet multiclass classification results")
+
+![Alt text](figs/voc/segmentation.png "UNet multiclass segmentation results")
+
+![Alt text](figs/voc/segmentation.png "UNet distilled student regularization")
 
 ## License
 
