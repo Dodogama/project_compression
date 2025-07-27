@@ -55,11 +55,19 @@ pip install -r requirements.txt
 
 ## Results
 
+### MLP1200 and MLP800 results on benchmark MNIST classification
+
 ![Alt text](figs/mnist/accuracy.png "MLP multiclass classification results")
+
+![Alt text](figs/mnist/transfer_confusion_matrix.png "MLP holdout class")
+
+### ResNet50 and ResNet34 results on benchmark CIFAR10 classification
 
 ![Alt text](figs/cifar/accuracy.png "ResNet multiclass classification results")
 
-![Alt text](figs/voc/segmentation.png "UNet multiclass segmentation results")
+### UNet (ResNet34 encoder) and UNet (ResNet18 encoder) on benchmark VOC segmentation
+
+![Alt text](figs/voc/accuracy.png "UNet multiclass segmentation results")
 
 ![Alt text](figs/voc/segmentation.png "UNet distilled student regularization")
 
